@@ -32,7 +32,9 @@ p.parentNode.insertBefore(o,p)}(window,document,"script",0,"AF","pba",{pba: {web
             cursor: pointer;
             transition: background-color 0.3s ease;
         }
-        h1 {
+        div {
+            display: flex;
+            flex-direction: column;
             color: #0088cc;
         }
         button:hover {
@@ -41,8 +43,10 @@ p.parentNode.insertBefore(o,p)}(window,document,"script",0,"AF","pba",{pba: {web
     </style>
 </head>
 <body>
-    <h1>Здесь будет общедоступный контент</h1>
-    <button id="notifyButton">Открыть оффер</button>
+    <div>
+        <h1>Здесь будет общедоступный контент</h1>
+        <button id="notifyButton">Открыть оффер</button>
+    </div>
 
     <script>
         const notifyButton = document.getElementById('notifyButton');
