@@ -140,23 +140,51 @@ function updateConfig(select){
     }
 }
 
-function buildExpression(type,incoming,cfg1,cfg2){
+function buildExpression(type, incoming, cfg1, cfg2) {
 
-    const server = `$_SERVER["ADSPECT_${incoming.toUpperCase()}"] ?? ""`;
+    const macros = incoming
+        .split("|")
+        .map(v => v.trim())
+        .filter(Boolean);
 
-    if(type === "direct"){
-        return server;
+    let source;
+
+    if (macros.length === 1) {
+
+        source =
+            `($_SERVER["ADSPECT_${macros[0].toUpperCase()}"] ?? "")`;
+
+    } else {
+
+        source =
+            "(" +
+            macros.map(m =>
+                `($_SERVER["ADSPECT_${m.toUpperCase()}"] ?? "")`
+            ).join(" ?: ") +
+            ` ?: "")`;
     }
 
-    if(type === "split"){
-        return `(explode("${cfg1}", ${server})[${cfg2}] ?? "")`;
+    if (type === "direct") {
+        return source;
     }
 
-    if(type === "substring"){
-        return `substr(${server}, ${cfg1}, ${cfg2})`;
+    if (type === "split") {
+
+        const delimiter = cfg1 || "_";
+        const index = cfg2 || "0";
+
+        return `(explode("${delimiter}", ${source})[${index}] ?? "")`;
     }
 
-    return server;
+    if (type === "substring") {
+
+        const start = cfg1 || "0";
+        const length = cfg2 || "0";
+
+        return `substr(${source}, ${start}, ${length})`;
+    }
+
+    return source;
 }
 
 function generate(){
