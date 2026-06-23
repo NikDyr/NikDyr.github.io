@@ -1,68 +1,229 @@
+```html
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram Web App</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script>
-!function(t,e,n,s,a,c,i,o,p){t.AppsFlyerSdkObject=a,t.AF=t.AF||function(){
-(t.AF.q=t.AF.q||[]).push([Date.now()].concat(Array.prototype.slice.call(arguments)))},
-t.AF.id=t.AF.id||i,t.AF.plugins={},o=e.createElement(n),p=e.getElementsByTagName(n)[0],o.async=1,
-o.src="https://websdk.appsflyer.com?"+(c.length>0?"st="+c.split(",").sort().join(",")+"&":"")+(i.length>0?"af_id="+i:""),
-p.parentNode.insertBefore(o,p)}(window,document,"script",0,"AF","pba",{pba: {webAppId: "eb1b3314-f300-4c88-af2f-fb32a0dddccb"}})
-</script>
-    <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-        }
-        button {
-            padding: 15px 30px;
-            font-size: 18px;
-            color: white;
-            background-color: #0088cc;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-        div {
-            display: flex;
-            flex-direction: column;
-            color: #0088cc;
-        }
-        button:hover {
-            background-color: #005f8c;
-        }
-    </style>
+<meta charset="UTF-8">
+<title>PHP URL Builder</title>
+
+<style>
+body{
+    font-family: Arial, sans-serif;
+    max-width:1200px;
+    margin:20px auto;
+    padding:20px;
+}
+
+h1{
+    margin-top:0;
+}
+
+input,select{
+    padding:6px;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:20px;
+}
+
+th,td{
+    border:1px solid #ddd;
+    padding:8px;
+}
+
+button{
+    padding:8px 14px;
+    cursor:pointer;
+}
+
+.output{
+    width:100%;
+    height:400px;
+    margin-top:20px;
+    font-family:monospace;
+}
+</style>
 </head>
+
 <body>
-    <div>
-        <h1>Здесь будет общедоступный контент</h1>
-        <button id="notifyButton">Открыть оффер</button>
-    </div>
 
-    <script>
-        const notifyButton = document.getElementById('notifyButton');
+<h1>PHP URL Builder</h1>
 
-        notifyButton.addEventListener('click', () => {
-            const telegram = window.Telegram.WebApp;
+<div>
+    <label>Base URL</label><br>
+    <input
+        id="baseUrl"
+        style="width:100%"
+        placeholder="https://web.team-s.club"
+    >
+</div>
 
-            // Отправка уведомления через Telegram WebApp
-            telegram.sendData("Пользователь нажал кнопку уведомления");
-            window.location.href = "https://9inecasino.com/";
-            // Визуальная обратная связь
-            alert("Уведомление отправлено!");
-        });
+<table id="mappingTable">
+    <thead>
+        <tr>
+            <th>Incoming</th>
+            <th>Outgoing</th>
+            <th>Type</th>
+            <th>Config 1</th>
+            <th>Config 2</th>
+            <th></th>
+        </tr>
+    </thead>
 
-        // Инициализация Telegram WebApp
-        Telegram.WebApp.ready();
-    </script>
+    <tbody id="rows"></tbody>
+</table>
+
+<br>
+
+<button onclick="addRow()">+ Add Mapping</button>
+<button onclick="generate()">Generate PHP</button>
+
+<textarea id="output" class="output"></textarea>
+
+<script>
+
+function addRow() {
+
+    const row = document.createElement("tr");
+
+    row.innerHTML = `
+        <td>
+            <input class="incoming" placeholder="campaign">
+        </td>
+
+        <td>
+            <input class="outgoing" placeholder="sub_id_1">
+        </td>
+
+        <td>
+            <select class="type" onchange="updateConfig(this)">
+                <option value="direct">Direct</option>
+                <option value="split">Split</option>
+                <option value="substring">Substring</option>
+            </select>
+        </td>
+
+        <td>
+            <input class="cfg1">
+        </td>
+
+        <td>
+            <input class="cfg2">
+        </td>
+
+        <td>
+            <button onclick="this.closest('tr').remove()">X</button>
+        </td>
+    `;
+
+    document.getElementById("rows").appendChild(row);
+}
+
+function updateConfig(select){
+
+    const row = select.closest("tr");
+
+    const cfg1 = row.querySelector(".cfg1");
+    const cfg2 = row.querySelector(".cfg2");
+
+    cfg1.placeholder = "";
+    cfg2.placeholder = "";
+
+    if(select.value === "split"){
+        cfg1.placeholder = "delimiter";
+        cfg2.placeholder = "index";
+    }
+
+    if(select.value === "substring"){
+        cfg1.placeholder = "start";
+        cfg2.placeholder = "length";
+    }
+}
+
+function buildExpression(type,incoming,cfg1,cfg2){
+
+    const server = `$_SERVER["ADSPECT_${incoming.toUpperCase()}"] ?? ""`;
+
+    if(type === "direct"){
+        return server;
+    }
+
+    if(type === "split"){
+        return `(explode("${cfg1}", ${server})[${cfg2}] ?? "")`;
+    }
+
+    if(type === "substring"){
+        return `substr(${server}, ${cfg1}, ${cfg2})`;
+    }
+
+    return server;
+}
+
+function generate(){
+
+    const url = document.getElementById("baseUrl").value.trim();
+
+    if(!url){
+        alert("Enter URL");
+        return;
+    }
+
+    const rows = document.querySelectorAll("#rows tr");
+
+    const parts = [];
+
+    rows.forEach(row => {
+
+        const incoming =
+            row.querySelector(".incoming").value.trim();
+
+        if(!incoming){
+            return;
+        }
+
+        let outgoing =
+            row.querySelector(".outgoing").value.trim();
+
+        if(!outgoing){
+            outgoing = incoming;
+        }
+
+        const type =
+            row.querySelector(".type").value;
+
+        const cfg1 =
+            row.querySelector(".cfg1").value;
+
+        const cfg2 =
+            row.querySelector(".cfg2").value;
+
+        const expr =
+            buildExpression(type,incoming,cfg1,cfg2);
+
+        parts.push(
+            `"${outgoing}=" . urlencode(${expr})`
+        );
+    });
+
+    const query =
+        parts.join('\n        . "&" .\n        ');
+
+    const php =
+`echo json_encode([
+    'ok' => true,
+    'url' => '${url}?' .
+        ${query},
+    'expires' => time()
+], JSON_UNESCAPED_SLASHES);`;
+
+    document.getElementById("output").value = php;
+}
+
+addRow();
+
+</script>
+
 </body>
 </html>
+```
